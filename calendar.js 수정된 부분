@@ -1,0 +1,13 @@
+ <div class="diary">
+    <span class="today"></span>
+    <button class="plus_btn"></button>
+    <div class="schedules">
+      <ul class="schedules_list">
+        <li>
+          ${list}
+        </li>
+      </ul>
+    </div>
+
+  </div>
+ 
