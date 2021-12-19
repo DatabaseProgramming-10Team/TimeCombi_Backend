@@ -33,7 +33,7 @@ const db = mysql.createConnection({
 db.connect();
 
 app.get('/', function(request, response){
-  if(request.session.email === null){
+  if(request.session.email == null){
     let html = startTemplate.loginHTML();  
     response.send(html); 
   }else{
