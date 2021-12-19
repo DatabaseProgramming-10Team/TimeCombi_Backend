@@ -51,13 +51,6 @@ router.post('/login_process', function(request, response){
     db.query(`SELECT * FROM userTBL WHERE email = '${email}' AND pwd = '${pwd}'`, function(error, checkUser){
         if(error){
             console.log(error); 
-            let alert = `
-            <script>
-                alert('로그인 실패')
-                location.href="/"
-            </script>
-            `; 
-            response.send(alert); 
             throw error;
         }
         if(checkUser[0] != undefined){
@@ -66,10 +59,19 @@ router.post('/login_process', function(request, response){
             console.log(`email : ${request.session.email}, pwd : ${request.session.pwd}`); 
             response.redirect(`/date`);
         }
+        else{
+            let alert = `
+            <script>
+                alert('로그인 실패')
+                location.href="/"
+            </script>
+            `; 
+            response.send(alert); 
+        }
     }); 
 });
 
-router.get('/logout', function(request, response){
+router.get('/logout', function(request, response){ 
     request.session.email = null; 
     request.session.pwd = null;
     response.redirect(`/`); 
@@ -83,8 +85,13 @@ router.get('/mypage', function(request, response){
             console.log(error); 
             throw error;
         }
-        let html = template.menu("마이페이지", template.mypage(user[0]), user[0].name);
 
+        let html = template.menu(
+            "마이페이지",
+            template.mypage(user[0]), 
+            user[0].name
+        );
+        
         response.send(html); 
     });
 });
