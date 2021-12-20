@@ -179,35 +179,76 @@ router.post('/delSelected', function(request, response){
     let g_id = request.body.group;
     let f_email = request.body.friend;
 
-    db.query(`SELECT * FROM userTBL WHERE email='${email}'`, function(error, user){
+    if(Array.isArray(g_id)){
         for(let i = 0; i < g_id.length; i++){
-            db.query(`DELETE FROM memberTBL WHERE m_id = ${g_id[i]}`, function(error, ){
-                if(error) throw error;
-    
+            db.query(`DELETE FROM memberTBL WHERE m_id=${g_id[i]}`, function(error, ){
+                if(error){
+                    console.log(error); 
+                    throw error;
+                }
                 db.query(`DELETE FROM groupTBL WHERE g_id = ${g_id[i]}`, function(error, ){
-                   if(error) throw error;
+                    if(error){
+                        console.log(error); 
+                        throw error;
+                    }
                 })
             })
         }
-    
+    }else{
+        db.query(`DELETE FROM memberTBL WHERE m_id = ${g_id}`, function(error, ){
+            if(error){
+                console.log(error); 
+                throw error;
+            }
+            db.query(`DELETE FROM groupTBL WHERE g_id = ${g_id}`, function(error, ){
+               if(error){
+                    console.log(error); 
+                    throw error;
+                }
+            })
+        })
+    }
+
+    if(Array.isArray(f_email)){
         for(let i = 0; i < f_email.length; i++){
-            db.query(`DELETE FROM memberTBL WHERE m_email='${f_email}'`, function(error, ){
-                if(error) throw error;
-                db.query(`DELETE FROM friendTBL WHERE (friend1 = '${email}' AND friend2 = '${f_email}') OR
-                (friend1 = '${f_email}' AND friend2 = '${email}')`, function(error, result){
-                    if(error) throw error;    
+            db.query(`DELETE FROM memberTBL WHERE m_email='${f_email[i]}'`, function(error, ){
+                if(error) {
+                    console.log(error); 
+                    throw error;
+                };
+
+                db.query(`DELETE FROM friendTBL WHERE (friend1 = '${email}' AND friend2 = '${f_email[i]}') OR
+                (friend1 = '${f_email[i]}' AND friend2 = '${email}')`, function(error, result){
+                    if(error) {
+                        console.log(error); 
+                        throw error;
+                    }
                 })
+            })            
+        }        
+    }else{
+        db.query(`DELETE FROM memberTBL WHERE m_email='${f_email}'`, function(error, ){
+            if(error) {
+                console.log(error); 
+                throw error;
+            };
+
+            db.query(`DELETE FROM friendTBL WHERE (friend1 = '${email}' AND friend2 = '${f_email}') OR
+            (friend1 = '${f_email}' AND friend2 = '${email}')`, function(error, result){
+                if(error) {
+                    console.log(error); 
+                    throw error;
+                }
             })
-        }
-        
-        let alert = `
-        <script>
-            alert('선택삭제 성공'); 
-            location.href="/friends"
-        </script>
-        `;
-        response.send(alert);   
-    })
+        })
+    }
+    let alert = `
+    <script>
+        alert('선택삭제 성공'); 
+        location.href="/friends"
+    </script>
+    `;
+    response.send(alert);  
 });
 
 //보낸 친구요청 조회
@@ -238,8 +279,8 @@ router.get("/receivedReq", function(request, response){
     
     db.query(`SELECT af.user1, af.user2, u.name from addFriendTBL AS af JOIN userTBL As u ON u.email=af.user1
     WHERE af.user2='${email}'`, function(error, receivedReq){
-        for(let i = 0; i < sentReq.length; i++){
-            receivedReqList += friendsTemplate.friendsList(receivedReq[i].user1, sentReq[i].name);
+        for(let i = 0; i < receivedReq.length; i++){
+            receivedReqList += friendsTemplate.friendsList(receivedReq[i].user1, receivedReq[i].name);
         }
         db.query(`SELECT * FROM userTBL WHERE email='${email}'`, function(error, user){
             let html = friendsTemplate.menu(
@@ -258,55 +299,107 @@ router.post("/cancelReq", function(request, response){
     let email = request.session.email;
     let f_email = request.body.friend;
 
-    db.query(`SELECT * FROM userTBL WHERE email='${email}'`, function(error, user){
-        if(error) throw error;
+    if(Array.isArray(f_email)){
         for(let i = 0; i < f_email.length; i++){
             db.query(`DELETE FROM addFriendTBL WHERE user1='${email}' AND user2='${f_email[i]}'`, function(error, ){
-                if(error) throw error;
+                if(error) {
+                    console.log(error)
+                    throw error;
+                }
+                console.log('배열')
             })
-        }        
+        }
         let alert = `
         <script>
             alert('친구요청 취소 완료'); 
             location.href="/friends/sentReq"
         </script>
         `;
-        response.send(alert);   
-    })
-})
+        response.send(alert);    
+    }else {
+        db.query(`DELETE FROM addFriendTBL WHERE user1='${email}' AND user2='${f_email}'`, function(error, ){
+            if(error){
+                console.log(error); 
+                throw error;
+            }
+
+            console.log('스트링')
+            let alert = `
+            <script>
+                alert('친구요청 취소 완료'); 
+                location.href="/friends/sentReq"
+            </script>
+            `;
+            response.send(alert);  
+        })
+    }     
+});
 
 //받은 친구요청 승인(승인버튼1개만 있을때)
 router.post("/confirmReq", function(request, response){
     let email = request.session.email;
     let f_email = request.body.friend;
 
-    db.query(`SELECT * FROM userTBL WHERE email='${email}'`, function(error, user){
-        if(error) throw error;
+    if(Array.isArray(f_email)){
         for(let i = 0; i < f_email.length; i++){
-            db.query(`SELECT * FROM addFriendTBL WHERE user1='${f_email}' AND user2='${email}'`, function(error, result){
-                if(error) throw error;
+            db.query(`INSERT INTO friendTBL(friend1, friend2) VALUES('${f_email[i]}', '${email}')`, function(error, ){
+                if(error){
+                    console.log(error); 
+                    throw error;
+                }
+                db.query(`INSERT INTO friendTBL(friend1, friend2) VALUES('${email}', '${f_email[i]}')`, function(error, ){
+                    if(error){
+                        console.log(error); 
+                        throw error;
+                    }
+                    db.query(`DELETE FROM addFriendTBL WHERE user1='${f_email[i]}' AND user2='${email}'`, function(error, ){
+                        if(error) {
+                            console.log(error); 
+                            throw error;
+                        }
 
-                db.query(`INSERT INTO friendTBL VALUES('${f_email}', '${email}'), ('${email}', '${f_email}')`, function(error, ){
-                    if(error) throw error;
-
-                    db.query(`DELETE * FROM addFriendTBL WHERE user1='${f_email}' AND user2='${email}'`, function(error, ){
-                        if(error) throw error;
-                    })
-                })
-            })
-        }        
+                    });
+                });
+            });
+        }
         let alert = `
         <script>
             alert('친구요청 승인 완료'); 
             location.href="/friends/receivedReq"
         </script>
         `;
-        response.send(alert);   
-    })    
+        response.send(alert); 
+    }else{
+        db.query(`INSERT INTO friendTBL(friend1, friend2) VALUES('${f_email}', '${email}')`, function(error, ){
+            if(error){
+                console.log(error); 
+                throw error;
+            }
+            db.query(`INSERT INTO friendTBL(friend1, friend2) VALUES('${email}', '${f_email}')`, function(error, ){
+                if(error){
+                    console.log(error); 
+                    throw error;
+                }
+                db.query(`DELETE FROM addFriendTBL WHERE user1='${f_email}' AND user2='${email}'`, function(error, ){
+                    if(error) {
+                        console.log(error); 
+                        throw error;
+                    }
+                    let alert = `
+                    <script>
+                        alert('친구요청 승인 완료'); 
+                        location.href="/friends/receivedReq"
+                    </script>
+                    `;
+                    response.send(alert); 
+                });
+            });
+        });
+    }   
 })
 
 //받은 친구요청 처리(승인, 거절버튼 모두 있을때)
-router.post("/req_process", function(request, response){
+/*router.post("/req_process", function(request, response){
     let email = request.session.email;
     let f_email = request.body.friend;
     let process = request.body.process;
@@ -354,5 +447,6 @@ router.post("/req_process", function(request, response){
         })    
     }
 })
+*/
 
 module.exports = router;
