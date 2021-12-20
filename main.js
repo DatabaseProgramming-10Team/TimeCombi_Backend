@@ -3,6 +3,7 @@ var app = express();
 var date_router = require("./routes/date_router");
 var date_calculator_router = require("./routes/date_calculator_router");
 var account_router = require("./routes/account_router"); 
+var friends_router = require("./routes/friends_router"); 
 var mysql = require("mysql"); 
 var port = 80;
 var bodyParser = require("body-parser");
@@ -45,6 +46,9 @@ app.use('/account', account_router);
 
 app.use("/date", date_router);
 app.use("/date_calculator", date_calculator_router);
+
+app.use('/friends', friends_router); 
+
 
 
 app.use(function (req, res, next) {
